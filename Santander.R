@@ -1,5 +1,6 @@
 library(xgboost)
 library(Matrix)
+library(MASS)
 
 set.seed(1234)
 
@@ -47,6 +48,11 @@ for(pair in features_pair) {
   }
 }
 
+
+## LDA (Linear Analysis Descriminant )
+fit_lda <- lda(train.y ~ .,data=train)
+
+
 feature.names <- setdiff(names(train), toRemove)
 
 train <- train[, feature.names]
@@ -60,13 +66,10 @@ train <- sparse.model.matrix(TARGET ~ ., data = train)
 dtrain <- xgb.DMatrix(data=train, label=train.y)
 watchlist <- list(train=dtrain)
 
-#Cross validation model : 
-train_control <- trainControl(method="repeatedcv",number="5",repeats ="3")
-
 param <- list(  objective           = "binary:logistic", 
                 booster             = "gbtree",
                 eval_metric         = "auc",
-                eta                 = 0.0202,
+                eta                 = 0.020205,
                 max_depth           = 5,
                 subsample           = 0.6815,
                 colsample_bytree    = 0.701
@@ -74,17 +77,17 @@ param <- list(  objective           = "binary:logistic",
 
 clf <- xgb.train(   params              = param, 
                     data                = dtrain, 
-                    nrounds             = 571, 
-                    trControl           = train_control,
-                    verbose             = 2,
+                    nrounds             = 560, 
+                    verbose             = 1,
                     watchlist           = watchlist,
                     maximize            = FALSE
 )
 
-print(clf)
-#test$TARGET <- -1
-#test <- sparse.model.matrix(TARGET ~ ., data = test)
 
-#preds <- predict(clf, test)
-#submission <- data.frame(ID=test.id, TARGET=preds)
-#write.csv(submission, "submission.csv", row.names = F)
+test$TARGET <- -1
+test <- sparse.model.matrix(TARGET ~ ., data = test)
+
+preds <- predict(clf, test)
+submission <- data.frame(ID=test.id, TARGET=preds)
+cat("saving the submission file\n")
+write.csv(submission, "submission21.csv", row.names = F)
